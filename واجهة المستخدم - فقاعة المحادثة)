@@ -1,0 +1,60 @@
+document.addEventListener("DOMContentLoaded", function() {
+    const chatWidget = document.createElement("div");
+    chatWidget.innerHTML = `
+        <style>
+            #chat-bubble { position: fixed; bottom: 20px; right: 20px; padding: 10px 20px; background: #007bff; color: white; border-radius: 50px; cursor: pointer; z-index: 9999; }
+            #chat-box { position: fixed; bottom: 80px; right: 20px; width: 300px; height: 400px; background: white; border: 1px solid #ccc; display: none; flex-direction: column; z-index: 9999; }
+            #chat-content { flex: 1; overflow-y: auto; padding: 10px; }
+            #chat-input { display: flex; border-top: 1px solid #ccc; }
+            #chat-input input { flex: 1; padding: 10px; border: none; outline: none; }
+            #chat-input button { padding: 10px; background: #007bff; color: white; border: none; cursor: pointer; }
+        </style>
+        <div id="chat-bubble">💬 تحدث معنا</div>
+        <div id="chat-box">
+            <div id="chat-content"></div>
+            <div id="chat-input">
+                <input id="userInput" type="text" placeholder="اكتب رسالتك...">
+                <button id="sendMessage">إرسال</button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(chatWidget);
+
+    const bubble = document.getElementById("chat-bubble");
+    const chatBox = document.getElementById("chat-box");
+    const sendMessage = document.getElementById("sendMessage");
+    const userInput = document.getElementById("userInput");
+    const chatContent = document.getElementById("chat-content");
+
+    bubble.addEventListener("click", () => chatBox.style.display = (chatBox.style.display === "none") ? "flex" : "none");
+
+    sendMessage.addEventListener("click", async () => {
+        const message = userInput.value.trim();
+        if (message) {
+            appendMessage("أنت", message);
+            userInput.value = "";
+            const botReply = await sendToBot(message);
+            appendMessage("بوت المتجر", botReply);
+        }
+    });
+
+    function appendMessage(sender, message) {
+        chatContent.innerHTML += `<p><strong>${sender}:</strong> ${message}</p>`;
+        chatContent.scrollTop = chatContent.scrollHeight;
+    }
+
+    async function sendToBot(message) {
+        try {
+            const response = await fetch("/chat", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ message: message, name: "Visitor", email: "N/A" })
+            });
+            const data = await response.json();
+            return data.response || "حدث خطأ، حاول مرة أخرى!";
+        } catch (error) {
+            return "تعذر الاتصال بالخادم.";
+        }
+    }
+});
