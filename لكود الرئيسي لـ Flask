@@ -1,0 +1,48 @@
+from flask import Flask, request, jsonify, render_template
+import openai
+
+app = Flask(__name__)
+
+# إعداد مفتاح API الخاص بـ OpenAI
+openai.api_key = "YOUR_OPENAI_API_KEY"
+
+# الصفحة الرئيسية
+@app.route('/')
+def index():
+    return "Chatbot API is running!"
+
+# معالجة الرسائل القادمة من واجهة المتجر
+@app.route('/chat', methods=['POST'])
+def chat():
+    data = request.json
+    user_message = data.get("message", "")
+    user_name = data.get("name", "Guest")
+    user_email = data.get("email", "Not provided")
+
+    # إعداد الـ prompt بناءً على الرسالة
+    prompt = f"""
+    أنت مساعد ذكي لمتجر إلكتروني. قدم إجابات ودودة ودقيقة.
+    اسم المستخدم: {user_name}
+    البريد الإلكتروني: {user_email}
+    السؤال: {user_message}
+
+    بعض الخيارات:
+    - معرفة الأسعار
+    - الاستفسار عن المنتجات
+    - طلب التحدث مع فريق الدعم
+    """
+
+    # إرسال الرسالة إلى نموذج GPT
+    response = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        messages=[
+            {"role": "system", "content": "أنت مساعد متجر ذكي."},
+            {"role": "user", "content": prompt},
+        ]
+    )
+
+    bot_response = response.choices[0].message.content.strip()
+    return jsonify({"response": bot_response})
+
+if __name__ == '__main__':
+    app.run(debug=True)
